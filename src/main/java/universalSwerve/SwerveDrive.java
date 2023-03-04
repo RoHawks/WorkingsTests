@@ -262,7 +262,7 @@ public class SwerveDrive
     private void CalculateAndApplyModuleStatesForSwerveInput(double pXTranslationComponent, double pYTranslationComponent, double pTranslationVelocityPercentage, double pRotationSpeedPercentage, DrivingStyle pDrivingStyle)
 	{
 		double controllerAngle = AngleUtilities.ConvertLinearComponentsToAngle(pXTranslationComponent, pYTranslationComponent);
-		
+		SmartDashboard.putNumber("ControllerAngle", controllerAngle);
 		double requestedLinearSpeed = pTranslationVelocityPercentage * mMaxLinearSpeed;
 
 		double linearSpeedLeftRightComponent = GetLinearSpeedLeftRightComponent(controllerAngle, requestedLinearSpeed);		
@@ -279,25 +279,37 @@ public class SwerveDrive
             //if(i==3)//just test NW
             {
                 Wheel wheel = mWheels[i];
-                SmartDashboard.putNumber("CurrentWheelAngle", wheel.GetCurrentAngle());
-                SmartDashboard.putNumber("RawCurrentWheelAngle", wheel.GetRawCurrentAngle());
+                
+                
                 SwerveModuleState targetState = targetModelStates[i];
 
                 //this takes care of the "drive it in reverse if your are close to the right angle already" thing:
                 SwerveModuleState optimizedTargetState = OptimizeTargetState(targetState, wheel.GetCurrentAngle());
                 //SwerveModuleState optimizedTargetState =targetState;
 
-                double targetAngle = AngleUtilities.ConvertSwerveKinematicsAnglesToOurAngles(optimizedTargetState.angle.getDegrees());
-                SmartDashboard.putNumber("optimizedTargetState.speedMetersPerSecond", optimizedTargetState.speedMetersPerSecond);
+                double targetAngle = AngleUtilities.ConvertSwerveKinematicsAnglesToOurAngles(optimizedTargetState.angle.getDegrees());                
                 wheel.SetWheelTargetAngle(targetAngle);
                 wheel.SetWheelVelocity(Conversions.MetersPerSecondToInchesPerSecond(optimizedTargetState.speedMetersPerSecond));
+
+                if(i == 0)
+                {
+                    //log NE
+                    SmartDashboard.putNumber("CurrentWheelAngle", wheel.GetCurrentAngle());
+                    SmartDashboard.putNumber("TargetAngle", targetAngle);
+                }
+
             }
 		}		
 	}
 
     public void StandardSwerveDrive(double pXTranslationComponent, double pYTranslationComponent, double pTranslationVelocityPercentage, double pRotationSpeedPercentage)
     {
-        if(Math.abs(pTranslationVelocityPercentage) < 0.01)
+        if(Math.abs(pRotationSpeedPercentage) < 0.15)
+        {
+            pRotationSpeedPercentage = 0;
+        }
+
+        if(Math.abs(pRotationSpeedPercentage) < 0.01)
         {
             this.mLastIntentionalAngle = mGyroscope.GetCurrentAngle();
             this.mIsIntentionallyTurning = false;

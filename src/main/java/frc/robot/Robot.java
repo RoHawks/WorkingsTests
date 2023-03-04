@@ -11,7 +11,13 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import universalSwerve.SwerveDrive;
+import universalSwerve.SwerveFactory;
+import universalSwerve.components.implementations.FalconTranslationSystem;
+import universalSwerve.components.implementations.SparkMaxUtilizingAbsoluteEncoderRotationSystemContinuously;
+import universalSwerve.utilities.PIDFConfiguration;
 
+import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.ControlType;
 import com.revrobotics.CANSparkMax.IdleMode;
@@ -24,8 +30,12 @@ import com.revrobotics.SparkMaxRelativeEncoder;
 import javax.management.RuntimeErrorException;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
+import com.ctre.phoenix.motorcontrol.TalonFXFeedbackDevice;
+import com.ctre.phoenix.motorcontrol.TalonFXInvertType;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.revrobotics.SparkMaxPIDController;
 
 import edu.wpi.first.wpilibj.PneumaticHub;
@@ -40,118 +50,16 @@ import edu.wpi.first.wpilibj.DoubleSolenoid;
  * project.
  */
 public class Robot extends TimedRobot {
-  
-    private CANSparkMax mNETurnSparkMax;
-    private CANSparkMax mSETurnSparkMax;
-    private CANSparkMax mSWTurnSparkMax;
-    private CANSparkMax mNWTurnSparkMax;
 
-    private CANSparkMax mIntakeLowerRollerSparkMax;
-    private CANSparkMax mIntakeUpperRollerSparkMax;
-
-    private CANSparkMax mArmLowerJointSparkMax;
-    private CANSparkMax mArmUpperJointSparkMax;
-
-    private TalonFX mNEDriveFalcon;
-    private TalonFX mSEDriveFalcon;
-    private TalonFX mSWDriveFalcon;
-    private TalonFX mNWDriveFalcon;
-    
-    private SparkMaxAbsoluteEncoder mNEEncoder;
-    private SparkMaxAbsoluteEncoder mSEEncoder;
-    private SparkMaxAbsoluteEncoder mSWEncoder;
-    private SparkMaxAbsoluteEncoder mNWEncoder;
-
-    private SparkMaxAbsoluteEncoder mArmLowerEncoder;
-    private SparkMaxAbsoluteEncoder mArmUpperEncoder;
-
-    private PneumaticHub mPneumaticsHub; 
-
-    private DoubleSolenoid mIntakeSolenoid;
-    private DoubleSolenoid mLeftClawSolenoid;
-    private DoubleSolenoid mRightClawSolenoid;
-
-    private XboxController mController;
-
-  
+  private SwerveDrive mSwerveDrive;
+  private XboxController mController;
 
   public void robotInit()
   {
-    
-      mNETurnSparkMax = InitializeTurnSparkMax(17);
-      mSETurnSparkMax = InitializeTurnSparkMax(15);
-      mSWTurnSparkMax = InitializeTurnSparkMax(4);
-      mNWTurnSparkMax = InitializeTurnSparkMax(2);
-
-      mNEEncoder = mNETurnSparkMax.getAbsoluteEncoder(Type.kDutyCycle);
-      mSEEncoder = mSETurnSparkMax.getAbsoluteEncoder(Type.kDutyCycle);
-      mSWEncoder = mSWTurnSparkMax.getAbsoluteEncoder(Type.kDutyCycle);
-      mNWEncoder = mNWTurnSparkMax.getAbsoluteEncoder(Type.kDutyCycle);
-
-
-      mIntakeLowerRollerSparkMax = InitializeIntakeSparkMax(3);
-      mIntakeUpperRollerSparkMax = InitializeIntakeSparkMax(16);
-
-      mArmLowerJointSparkMax = InitializeArmSparkMax(14);
-      mArmUpperJointSparkMax = InitializeArmSparkMax(13);
-
-      mArmLowerEncoder = mArmLowerJointSparkMax.getAbsoluteEncoder(Type.kDutyCycle);
-      mArmUpperEncoder = mArmUpperJointSparkMax.getAbsoluteEncoder(Type.kDutyCycle);
-
-      mNEDriveFalcon = InitializeDriveFalcon(19);
-      mSEDriveFalcon = InitializeDriveFalcon(18);
-      mSWDriveFalcon = InitializeDriveFalcon(1);
-      mNWDriveFalcon = InitializeDriveFalcon(2);
-
-      mPneumaticsHub = new PneumaticHub(31);
-
-      mIntakeSolenoid = mPneumaticsHub.makeDoubleSolenoid(10,13);
-      mLeftClawSolenoid = mPneumaticsHub.makeDoubleSolenoid(11,14);
-      mLeftClawSolenoid = new DoubleSolenoid(1 ,PneumaticsModuleType.REVPH,12,15);
-
-
-      mController = new XboxController(0);
+    mSwerveDrive= SwerveFactory.Create2023Swerve();
+    mController = new XboxController(0);
   }
 
-  private CANSparkMax InitializeTurnSparkMax(int pCANId)
-  {
-    CANSparkMax returnValue = new CANSparkMax(pCANId, MotorType.kBrushless);
-    returnValue.restoreFactoryDefaults();
-    returnValue.setSmartCurrentLimit(20);
-    returnValue.getPIDController().setFeedbackDevice(returnValue.getAbsoluteEncoder(Type.kDutyCycle));
-    returnValue.burnFlash();
-    
-    return returnValue;
-  }
-
-  private CANSparkMax InitializeIntakeSparkMax(int pCANId)
-  {
-    CANSparkMax returnValue = new CANSparkMax(pCANId, MotorType.kBrushless);
-    returnValue.restoreFactoryDefaults();
-    returnValue.setSmartCurrentLimit(20);
-    returnValue.burnFlash();
-    return returnValue;
-    
-  }
-
-  private CANSparkMax InitializeArmSparkMax(int pCANId)
-  {
-    
-    CANSparkMax returnValue = new CANSparkMax(pCANId, MotorType.kBrushless);
-    returnValue.restoreFactoryDefaults();
-    returnValue.setSmartCurrentLimit(40);
-    returnValue.getPIDController().setFeedbackDevice(returnValue.getAbsoluteEncoder(Type.kDutyCycle));
-    returnValue.burnFlash();
-    
-    return returnValue;
-  }
-
-  private TalonFX InitializeDriveFalcon(int pCANId)
-  {
-    TalonFX returnValue = new TalonFX(pCANId);
-    returnValue.configSupplyCurrentLimit(new SupplyCurrentLimitConfiguration(true, 40, 60, 2));
-    return returnValue;
-  }
   /**
    * This function is called every 20 ms, no matter the mode. Use this for items like diagnostics
    * that you want ran during disabled, autonomous, teleoperated and test.
@@ -162,84 +70,16 @@ public class Robot extends TimedRobot {
   @Override
   public void robotPeriodic() 
   {
-    SmartDashboard.putNumber("mNEEncoder", mNEEncoder.getPosition());
-    SmartDashboard.putNumber("mSEEncoder", mSEEncoder.getPosition());
-    SmartDashboard.putNumber("mSWEncoder", mSWEncoder.getPosition());
-    SmartDashboard.putNumber("mNWEncoder", mNWEncoder.getPosition());
-
-    SmartDashboard.putNumber("mArmLowerEncoder", mArmLowerEncoder.getPosition());
-    SmartDashboard.putNumber("mArmUpperEncoder", mArmUpperEncoder.getPosition());   
-
-
-  }
-
-  private void TestFalconControl(TalonFX pTalonFX, boolean pRun)
-  {
-    if(pRun)
-    {
-      pTalonFX.set(ControlMode.PercentOutput, 0.1);
-    }
-    else
-    {
-      pTalonFX.set(ControlMode.PercentOutput, 0);
-    }
-  }
-
-
-  private void TestSparkMaxControl(CANSparkMax pSparkMax, boolean pRun)
-  {
-    if(pRun)
-    {
-      pSparkMax.set(0.1);
-    }
-    else
-    {
-      pSparkMax.set(0);
-    }
-  }
-
-  private void TestPneumaticsMaxControl(DoubleSolenoid pSolenoid, boolean pRun)
-  {
-    if(pRun)
-    {
-      pSolenoid.set(DoubleSolenoid.Value.kForward);
-    }
-    else
-    {
-      pSolenoid.set(DoubleSolenoid.Value.kReverse);
-    }
+    
   }
 
   public void teleopPeriodic()
   {
-    if (!mController.getLeftBumper())
-      {
-      TestFalconControl(mNEDriveFalcon, mController.getStartButton() && mController.getYButton());
-      TestFalconControl(mSEDriveFalcon, mController.getStartButton() && mController.getBButton());
-      TestFalconControl(mSWDriveFalcon, mController.getStartButton() && mController.getAButton());
-      TestFalconControl(mNWDriveFalcon, mController.getStartButton() && mController.getXButton());
-
-      TestSparkMaxControl(mNETurnSparkMax, !mController.getStartButton() && mController.getYButton());
-      TestSparkMaxControl(mSETurnSparkMax, !mController.getStartButton() && mController.getBButton());
-      TestSparkMaxControl(mSWTurnSparkMax, !mController.getStartButton() && mController.getAButton());
-      TestSparkMaxControl(mNWTurnSparkMax, !mController.getStartButton() && mController.getXButton());
-    }
-    else
-    {
-      TestPneumaticsMaxControl(mIntakeSolenoid,  mController.getYButton());
-      TestPneumaticsMaxControl(mLeftClawSolenoid, mController.getBButton());
-      TestPneumaticsMaxControl(mRightClawSolenoid, mController.getAButton());
-    }
-    TestSparkMaxControl(mArmLowerJointSparkMax, mController.getRightTriggerAxis() > 0.5);
-    TestSparkMaxControl(mArmUpperJointSparkMax, mController.getLeftTriggerAxis() > 0.5);
-
-    TestSparkMaxControl(mIntakeLowerRollerSparkMax, mController.getLeftBumper());
-    TestSparkMaxControl(mIntakeUpperRollerSparkMax, mController.getRightBumper());
-
-    
-
+    //mSwerveDrive.StandardSwerveDrive(mController.getLeftX(), mController.getLeftY(), , mController.getRightX());
+    mSwerveDrive.StandardSwerveDrive(mController.getLeftX(), mController.getLeftY(), mController.getRightTriggerAxis(), mController.getRightX());
 
   }
+  
 
   /**
    * This autonomous (along with the chooser code above) shows how to select between different

@@ -20,10 +20,10 @@ public class FalconTranslationSystem implements ITranslationSystem{
         Diameter is in inches
         Gear ratio is a fraction, so a 10:1 should be passed in as 0.1
     */
-    public FalconTranslationSystem(WPI_TalonFX pFalcon, boolean pInvertMotor, PIDFConfiguration pPidfConfiguration, double pWheelDiameter, double pGearRatio)
+    public FalconTranslationSystem(WPI_TalonFX pFalcon, PIDFConfiguration pPidfConfiguration, double pWheelDiameter, double pGearRatio)
     {
         mFalcon = pFalcon;
-        InitializeFalcon(pInvertMotor, pPidfConfiguration);
+        InitializeFalconPID(pPidfConfiguration);
         mWheelDiameter = pWheelDiameter;
         mGearRatio = pGearRatio;
     }
@@ -76,14 +76,14 @@ public class FalconTranslationSystem implements ITranslationSystem{
 
     public double GetVelocity()
     {
-        return Conversions.RPMstoInchesPerSecond(mFalcon.getSelectedSensorVelocity(), this.mWheelDiameter);
+        
+        double motorRPMs = Conversions.FalconVelocityUnitToRPMS(mFalcon.getSelectedSensorVelocity());        
+        double wheelRPMs = motorRPMs * mGearRatio;        
+        return Conversions.RPMstoInchesPerSecond(wheelRPMs, mWheelDiameter);        
     }
 
-    private void InitializeFalcon(boolean pInvertMotor, PIDFConfiguration pPidfConfiguration)
+    private void InitializeFalconPID(PIDFConfiguration pPidfConfiguration)
     {
-        mFalcon.setInverted(pInvertMotor);
-        mFalcon.setNeutralMode(NeutralMode.Brake);
-        mFalcon.configSelectedFeedbackSensor(TalonFXFeedbackDevice.IntegratedSensor, 0,0);
         mFalcon.config_kF(0, pPidfConfiguration.F());
         mFalcon.config_kP(0, pPidfConfiguration.P());
         mFalcon.config_kI(0, pPidfConfiguration.I());

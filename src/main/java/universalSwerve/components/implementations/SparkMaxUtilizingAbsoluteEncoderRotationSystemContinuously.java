@@ -10,38 +10,30 @@ import universalSwerve.utilities.PIDFConfiguration;
 
 public class SparkMaxUtilizingAbsoluteEncoderRotationSystemContinuously implements IRotationSystem
 {
-    private CANSparkMax mSparkMax;
-    private double mInitialAngle;
-    private double mGearRatioBetweenMotorAndWheel;
+    private CANSparkMax mSparkMax;    
 	private SparkMaxAbsoluteEncoder mAbsoluteEncoder;
 
-
-	/*
-	The gear ratio passed in here should be a fraction, so if it's 100:1, pass in 0.01
-	*/
-    public SparkMaxUtilizingAbsoluteEncoderRotationSystemContinuously(CANSparkMax pSparkMax, double pGearRatioBetweenMotorAndWheel, PIDFConfiguration pPidfConfiguration)
+	
+    public SparkMaxUtilizingAbsoluteEncoderRotationSystemContinuously(CANSparkMax pSparkMax,  PIDFConfiguration pPidfConfiguration)
     {
         mSparkMax = pSparkMax;
 		mAbsoluteEncoder = mSparkMax.getAbsoluteEncoder(SparkMaxAbsoluteEncoder.Type.kDutyCycle);
-		SetSparkMaxParameters(pPidfConfiguration);
-        mGearRatioBetweenMotorAndWheel = pGearRatioBetweenMotorAndWheel;
+		SetPIDParameters(pPidfConfiguration);        
 
     }
 
-    private void SetSparkMaxParameters(PIDFConfiguration pPidfConfiguration)
+    private void SetPIDParameters(PIDFConfiguration pPidfConfiguration)
     {
-		mSparkMax.restoreFactoryDefaults();
-        mSparkMax.setInverted(true);
-		mSparkMax.setOpenLoopRampRate(0.35);
-		mSparkMax.setSmartCurrentLimit(20);		
-		mSparkMax.getPIDController().setFeedbackDevice(mSparkMax.getEncoder());
-		mSparkMax.getEncoder().setPosition(0);
+
+        
 		mSparkMax.getPIDController().setFF(pPidfConfiguration.F());
-		mSparkMax.getPIDController().setP(pPidfConfiguration.P());
-		mSparkMax.getPIDController().setI(pPidfConfiguration.I());
-		mSparkMax.getPIDController().setD(pPidfConfiguration.D());
-		
-		mSparkMax.getPIDController().setOutputRange(-1, 1);
+		mSparkMax.getPIDController().setP(pPidfConfiguration.P());        
+		mSparkMax.getPIDController().setI(pPidfConfiguration.I());        
+		mSparkMax.getPIDController().setD(pPidfConfiguration.D());		        
+		mSparkMax.getPIDController().setOutputRange(-1, 1);        
+        mSparkMax.getPIDController().setPositionPIDWrappingEnabled(true);        
+        mSparkMax.getPIDController().setPositionPIDWrappingMaxInput(1);
+        mSparkMax.getPIDController().setPositionPIDWrappingMinInput(0);               
 		
     }
 
@@ -55,7 +47,7 @@ public class SparkMaxUtilizingAbsoluteEncoderRotationSystemContinuously implemen
     @Override
     public double GetCurrentAngle() {
         
-        return AngleUtilities.Normalize(mAbsoluteEncoder.getPosition() * 360.0);
+        return AngleUtilities.Normalize(ConvertEncoderUnitToOurAngle(mAbsoluteEncoder.getPosition()));
     }
 	@Override
     public double GetRawCurrentAngle() {
@@ -64,10 +56,22 @@ public class SparkMaxUtilizingAbsoluteEncoderRotationSystemContinuously implemen
     }
 
 
+    private double ConvertOurAngleToEncoderUnit(double pAngle)
+    {
+        return (360.0 - AngleUtilities.Normalize(pAngle)) / 360.0;
+    }
+
+    private double ConvertEncoderUnitToOurAngle(double pEncoderUnit)
+    {
+        return AngleUtilities.Normalize((1.0 - pEncoderUnit) * 360.0);
+    }
 
     @Override
     public void SetAngle(double pTargetAngle) {
-        mSparkMax.getPIDController().setReference(pTargetAngle, CANSparkMax.ControlType.kPosition);
+        double encoderReference = ConvertOurAngleToEncoderUnit(pTargetAngle);
+        SmartDashboard.putNumber("encoderReference", encoderReference);
+        mSparkMax.getPIDController().setReference(encoderReference, CANSparkMax.ControlType.kPosition);
+        
         
     }
     
@@ -75,9 +79,9 @@ public class SparkMaxUtilizingAbsoluteEncoderRotationSystemContinuously implemen
     /**
 	Returns the number of full rotations of the turn motor
 	*/
-	private double GetAngle()
+	public double GetAngle()
 	{
-		return mSparkMax.getEncoder().getPosition();
+		return ConvertEncoderUnitToOurAngle(mSparkMax.getEncoder().getPosition());
 	}
 
 	

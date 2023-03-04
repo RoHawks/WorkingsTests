@@ -34,8 +34,8 @@ public class Conversions
     public static double RPMstoInchesPerSecond(double pRPMS, double pDiameter)
     {
         double inchesPerRotation = Math.PI * pDiameter;
-        double rotationsPerSecond = pRPMS / 60;
-        double inchesPerSecond = inchesPerRotation /  rotationsPerSecond;
+        double rotationsPerSecond = pRPMS / 60.0;
+        double inchesPerSecond = inchesPerRotation *  rotationsPerSecond;
         return inchesPerSecond;
     }
 
@@ -48,5 +48,16 @@ public class Conversions
         double positionsPerRotation = 2048.0;
         double falconUnits = positionsPerRotation * rotationsPer100ms;
         return falconUnits;
+    }
+
+    public static double FalconVelocityUnitToRPMS(double pFalconVelocityUnit)
+    {
+        //Falcon velocity unit is "position change per 100ms" for some stupid reason
+        //I think "position" here refers to encoder ticks
+        //Of which there are 2048 per rotation
+        double positionsPerRotation = 2048.0;
+        double rotatitionsPer100ms = pFalconVelocityUnit / positionsPerRotation;
+        double rpms = rotatitionsPer100ms * 60.0 * 10.0;
+        return rpms;
     }
 }
