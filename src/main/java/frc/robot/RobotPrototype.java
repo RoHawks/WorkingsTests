@@ -38,7 +38,6 @@ import java.util.List;
  * project.
  */
 public class RobotPrototype extends TimedRobot {
-  private boolean xtwentytbree = true;
   private SparkMaxAbsoluteEncoder mLowerJointAbsoluteEncoder;
   private SparkMaxAbsoluteEncoder mUpperJointAbsoluteEncoder;
   private RelativeEncoder mLowerJointRelativeEncoder;
