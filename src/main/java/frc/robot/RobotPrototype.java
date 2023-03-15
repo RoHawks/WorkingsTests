@@ -28,7 +28,8 @@ import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.revrobotics.SparkMaxPIDController;
 
-
+import java.util.HashMap;
+import java.util.List;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -37,6 +38,7 @@ import com.revrobotics.SparkMaxPIDController;
  * project.
  */
 public class RobotPrototype extends TimedRobot {
+  private boolean xtwentytbree = true;
   private SparkMaxAbsoluteEncoder mLowerJointAbsoluteEncoder;
   private SparkMaxAbsoluteEncoder mUpperJointAbsoluteEncoder;
   private RelativeEncoder mLowerJointRelativeEncoder;
