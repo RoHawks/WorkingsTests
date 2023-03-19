@@ -39,11 +39,11 @@ public class SwerveFactory
 
         double TURN_GEAR_RATIO = 203.0/9424.0;
 
-        double MAX_LINEAR_SPEED = 2 * 12.0; //inches per second // original was 15.76 (scaled down to 5)        double MAX_ROTATIONAL_SPEED = 120; //degrees per second
+        double MAX_LINEAR_SPEED = 5.0 * 12.0; //inches per second // original was 15.76 (scaled down to 5)        double MAX_ROTATIONAL_SPEED = 120; //degrees per second
         double MAX_ROTATIONAL_SPEED = 120; //degrees per second
         double NUDGING_SPEED = 2;
 
-        ADIS16470Gyro gyro = new ADIS16470Gyro(edu.wpi.first.wpilibj.ADIS16470_IMU.IMUAxis.kY, true);
+        ADIS16470Gyro gyro = new ADIS16470Gyro(edu.wpi.first.wpilibj.ADIS16470_IMU.IMUAxis.kZ, true);
 
         //Drive FPID Configurations:
         PIDFConfiguration neDriveFPIDCongiruation = new PIDFConfiguration(0.083, 0, 0,  0.046);
@@ -79,7 +79,7 @@ public class SwerveFactory
                 WPI_TalonFX returnValue = new WPI_TalonFX(pDriveChannel);
                 returnValue.configSupplyCurrentLimit(new SupplyCurrentLimitConfiguration(true, 40, 60, 2));
                 returnValue.setInverted(true);    
-                returnValue.setNeutralMode(NeutralMode.Brake);
+                returnValue.setNeutralMode(NeutralMode.Coast);
                 returnValue.configSelectedFeedbackSensor(TalonFXFeedbackDevice.IntegratedSensor, 0,0);
                     
                 return returnValue;

@@ -11,6 +11,9 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
+import robosystems.*;
+
 import universalSwerve.SwerveDrive;
 import universalSwerve.SwerveFactory;
 import universalSwerve.components.implementations.FalconTranslationSystem;
@@ -19,17 +22,21 @@ import universalSwerve.utilities.PIDFConfiguration;
 
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.CANSparkMax.ControlType;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.RelativeEncoder;
-import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+
 import com.revrobotics.SparkMaxAbsoluteEncoder.Type;
 import com.revrobotics.SparkMaxAbsoluteEncoder;
 import com.revrobotics.SparkMaxRelativeEncoder;
 
+import java.util.concurrent.CancellationException;
+
 import javax.management.RuntimeErrorException;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.MotorCommutation;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.TalonFXFeedbackDevice;
@@ -53,11 +60,37 @@ public class Robot extends TimedRobot {
 
   private SwerveDrive mSwerveDrive;
   private XboxController mController;
+  private PneumaticHub mPneumaticHub;
+  private CANSparkMax mBottomIntake;
+  private CANSparkMax mTopIntake;
+  private Intake mIntake;
+  private Claw mClaw;
 
   public void robotInit()
   {
     mSwerveDrive= SwerveFactory.Create2023Swerve();
     mController = new XboxController(0);
+
+    mPneumaticHub = new PneumaticHub(31);
+    
+    mBottomIntake = new CANSparkMax(16, MotorType.kBrushless);
+    mTopIntake = new CANSparkMax(3, MotorType.kBrushless);
+
+    mBottomIntake.restoreFactoryDefaults(true); // If true, burn the flash with the factory default parameters?
+    mBottomIntake.setSmartCurrentLimit(20);
+    mBottomIntake.burnFlash();
+
+    mTopIntake.restoreFactoryDefaults(true); // If true, burn the flash with the factory default parameters?
+    mTopIntake.setSmartCurrentLimit(20);
+    mTopIntake.burnFlash();
+
+
+    // mIntake = new Intake(new CANSparkMax(13, MotorType.kBrushless), 
+    //                      new CANSparkMax(16, MotorType.kBrushless),
+    //                      mPneumaticHub.makeDoubleSolenoid(12, 15));
+    
+    // mClaw = new Claw(mPneumaticHub.makeDoubleSolenoid(10, 13),
+    //                  mPneumaticHub.makeDoubleSolenoid(11, 14));
   }
 
   /**
@@ -77,6 +110,17 @@ public class Robot extends TimedRobot {
   {
     //mSwerveDrive.StandardSwerveDrive(mController.getLeftX(), mController.getLeftY(), , mController.getRightX());
     mSwerveDrive.StandardSwerveDrive(mController.getLeftX(), mController.getLeftY(), mController.getRightTriggerAxis(), mController.getRightX());
+    
+    if (mController.getAButton())
+    {
+       mBottomIntake.set(-0.5);
+        mTopIntake.set(-1.0);
+    }
+    else
+    {
+      mBottomIntake.set(0);
+      mTopIntake.set(0);
+    }
 
   }
   
